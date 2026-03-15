@@ -46,8 +46,7 @@ export class TagPopover {
     const vaultTags = this.plugin.getAllVaultTags().filter((t) => !tags.includes(t));
 
     // Build the popover (off-screen first so we can measure it)
-    const pop = document.body.createEl("div", { cls: "pdf-tags-popover" });
-    pop.style.visibility = "hidden";
+    const pop = document.body.createEl("div", { cls: "pdf-tags-popover pdf-tags-popover--hidden" });
     this.containerEl = pop;
 
     // Current tags
@@ -68,14 +67,13 @@ export class TagPopover {
 
     // Autocomplete dropdown
     const dropdown = pop.createEl("div", { cls: "pdf-tags-dropdown" });
-    dropdown.style.display = "none";
 
     const showDropdown = (query: string) => {
       dropdown.empty();
-      if (!query) { dropdown.style.display = "none"; return; }
+      if (!query) { dropdown.classList.remove("pdf-tags-dropdown--visible"); return; }
       const q = query.toLowerCase().replace(/^#+/, "");
       const matches = vaultTags.filter((t) => t.toLowerCase().includes(q)).slice(0, 8);
-      if (!matches.length) { dropdown.style.display = "none"; return; }
+      if (!matches.length) { dropdown.classList.remove("pdf-tags-dropdown--visible"); return; }
       matches.forEach((tag) => {
         const item = dropdown.createEl("div", {
           cls: "pdf-tags-dropdown-item",
@@ -84,17 +82,17 @@ export class TagPopover {
         item.addEventListener("mousedown", async (e) => {
           e.preventDefault();
           input.value = "";
-          dropdown.style.display = "none";
+          dropdown.classList.remove("pdf-tags-dropdown--visible");
           await this.plugin.addTag(file.path, tag);
           await this.rerender(pop, file);
         });
       });
-      dropdown.style.display = "block";
+      dropdown.classList.add("pdf-tags-dropdown--visible");
     };
 
     input.addEventListener("input", () => showDropdown(input.value));
     input.addEventListener("blur", () => {
-      setTimeout(() => { dropdown.style.display = "none"; }, 150);
+      setTimeout(() => { dropdown.classList.remove("pdf-tags-dropdown--visible"); }, 150);
     });
 
     const doAdd = async () => {
@@ -102,7 +100,7 @@ export class TagPopover {
       if (!raw) return;
       const tag = raw.toLowerCase().replace(/\s+/g, "-");
       input.value = "";
-      dropdown.style.display = "none";
+      dropdown.classList.remove("pdf-tags-dropdown--visible");
       await this.plugin.addTag(file.path, tag);
       await this.rerender(pop, file);
     };
@@ -141,7 +139,7 @@ export class TagPopover {
     // Position after the popover has been rendered so we know its dimensions
     requestAnimationFrame(() => {
       this.positionPopover(pop);
-      pop.style.visibility = "";
+      pop.classList.remove("pdf-tags-popover--hidden");
     });
   }
 

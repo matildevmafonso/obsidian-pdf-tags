@@ -44,7 +44,6 @@ var PdfTagsSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "PDF Tags Settings" });
     new import_obsidian.Setting(containerEl).setName("Companion folder").setDesc(
       "Vault-relative folder where companion .md files (holding tags) are stored. These files are what Obsidian indexes for graph view and search."
     ).addText(
@@ -92,8 +91,7 @@ var TagPopover = class {
     const file = this.file;
     const tags = await this.plugin.getTagsForFile(file.path);
     const vaultTags = this.plugin.getAllVaultTags().filter((t) => !tags.includes(t));
-    const pop = document.body.createEl("div", { cls: "pdf-tags-popover" });
-    pop.style.visibility = "hidden";
+    const pop = document.body.createEl("div", { cls: "pdf-tags-popover pdf-tags-popover--hidden" });
     this.containerEl = pop;
     const chipArea = pop.createEl("div", { cls: "pdf-tags-popover-chips" });
     this.renderChips(chipArea, tags, file.path);
@@ -107,17 +105,16 @@ var TagPopover = class {
     (0, import_obsidian2.setIcon)(addBtn, "plus");
     addBtn.setAttribute("aria-label", "Add tag");
     const dropdown = pop.createEl("div", { cls: "pdf-tags-dropdown" });
-    dropdown.style.display = "none";
     const showDropdown = (query) => {
       dropdown.empty();
       if (!query) {
-        dropdown.style.display = "none";
+        dropdown.classList.remove("pdf-tags-dropdown--visible");
         return;
       }
       const q = query.toLowerCase().replace(/^#+/, "");
       const matches = vaultTags.filter((t) => t.toLowerCase().includes(q)).slice(0, 8);
       if (!matches.length) {
-        dropdown.style.display = "none";
+        dropdown.classList.remove("pdf-tags-dropdown--visible");
         return;
       }
       matches.forEach((tag) => {
@@ -128,17 +125,17 @@ var TagPopover = class {
         item.addEventListener("mousedown", async (e) => {
           e.preventDefault();
           input.value = "";
-          dropdown.style.display = "none";
+          dropdown.classList.remove("pdf-tags-dropdown--visible");
           await this.plugin.addTag(file.path, tag);
           await this.rerender(pop, file);
         });
       });
-      dropdown.style.display = "block";
+      dropdown.classList.add("pdf-tags-dropdown--visible");
     };
     input.addEventListener("input", () => showDropdown(input.value));
     input.addEventListener("blur", () => {
       setTimeout(() => {
-        dropdown.style.display = "none";
+        dropdown.classList.remove("pdf-tags-dropdown--visible");
       }, 150);
     });
     const doAdd = async () => {
@@ -147,7 +144,7 @@ var TagPopover = class {
         return;
       const tag = raw.toLowerCase().replace(/\s+/g, "-");
       input.value = "";
-      dropdown.style.display = "none";
+      dropdown.classList.remove("pdf-tags-dropdown--visible");
       await this.plugin.addTag(file.path, tag);
       await this.rerender(pop, file);
     };
@@ -179,7 +176,7 @@ var TagPopover = class {
     setTimeout(() => input.focus(), 50);
     requestAnimationFrame(() => {
       this.positionPopover(pop);
-      pop.style.visibility = "";
+      pop.classList.remove("pdf-tags-popover--hidden");
     });
   }
   positionPopover(pop) {
@@ -269,7 +266,8 @@ var PdfToolbarInjector = class {
     if (viewerComponent.child) {
       doInject(viewerComponent.child);
     } else if (typeof viewerComponent.then === "function") {
-      viewerComponent.then((child) => doInject(child));
+      const child = await viewerComponent;
+      doInject(child);
     }
   }
   injectChild(child, file) {
@@ -428,39 +426,29 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
     const file = this.app.vault.getAbstractFileByPath(companionPath);
     if (!(file instanceof import_obsidian4.TFile))
       return [];
-    const content = await this.app.vault.read(file);
-    const match = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!match)
-      return [];
-    try {
-      const frontmatter = (0, import_obsidian4.parseYaml)(match[1]);
-      const raw = frontmatter["tags"];
+    let result = [];
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const raw = fm["tags"];
       if (Array.isArray(raw))
-        return raw.map(String);
-      if (typeof raw === "string")
-        return [raw];
-    } catch (e) {
-    }
-    return [];
+        result = raw.map(String);
+      else if (typeof raw === "string")
+        result = [raw];
+    });
+    return result;
   }
   async writeTagsForFile(pdfPath, tags) {
     var _a;
     await this.ensureFolder();
     const companionPath = this.companionPathFor(pdfPath);
-    const frontmatter = `---
-${(0, import_obsidian4.stringifyYaml)({ tags })}---
-`;
-    const existing = this.app.vault.getAbstractFileByPath(companionPath);
-    if (existing instanceof import_obsidian4.TFile) {
-      const old = await this.app.vault.read(existing);
-      const body = old.replace(/^---\n[\s\S]*?\n---\n?/, "");
-      await this.app.vault.modify(existing, frontmatter + body);
-    } else {
+    let file = this.app.vault.getAbstractFileByPath(companionPath);
+    if (!(file instanceof import_obsidian4.TFile)) {
       const pdfName = (_a = pdfPath.split("/").pop()) != null ? _a : pdfPath;
-      const body = `[[${pdfName}]]
-`;
-      await this.app.vault.create(companionPath, frontmatter + body);
+      file = await this.app.vault.create(companionPath, `[[${pdfName}]]
+`);
     }
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      fm["tags"] = tags;
+    });
   }
   async addTag(pdfPath, tag) {
     const tags = await this.getTagsForFile(pdfPath);

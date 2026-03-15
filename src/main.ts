@@ -2,8 +2,6 @@ import {
   Plugin,
   TFile,
   normalizePath,
-  parseYaml,
-  stringifyYaml,
 } from "obsidian";
 import { PdfTagsSettings, DEFAULT_SETTINGS } from "./types";
 import { PdfTagsSettingTab } from "./SettingsTab";
@@ -141,36 +139,28 @@ export default class PdfTagsPlugin extends Plugin {
     const file = this.app.vault.getAbstractFileByPath(companionPath);
     if (!(file instanceof TFile)) return [];
 
-    const content = await this.app.vault.read(file);
-    const match = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!match) return [];
-
-    try {
-      const frontmatter = parseYaml(match[1]) as Record<string, unknown>;
-      const raw = frontmatter["tags"];
-      if (Array.isArray(raw)) return raw.map(String);
-      if (typeof raw === "string") return [raw];
-    } catch {
-      // malformed frontmatter
-    }
-    return [];
+    let result: string[] = [];
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const raw = fm["tags"];
+      if (Array.isArray(raw)) result = raw.map(String);
+      else if (typeof raw === "string") result = [raw];
+    });
+    return result;
   }
 
   private async writeTagsForFile(pdfPath: string, tags: string[]): Promise<void> {
     await this.ensureFolder();
     const companionPath = this.companionPathFor(pdfPath);
-    const frontmatter = `---\n${stringifyYaml({ tags })}---\n`;
 
-    const existing = this.app.vault.getAbstractFileByPath(companionPath);
-    if (existing instanceof TFile) {
-      const old = await this.app.vault.read(existing);
-      const body = old.replace(/^---\n[\s\S]*?\n---\n?/, "");
-      await this.app.vault.modify(existing, frontmatter + body);
-    } else {
+    let file = this.app.vault.getAbstractFileByPath(companionPath);
+    if (!(file instanceof TFile)) {
       const pdfName = pdfPath.split("/").pop() ?? pdfPath;
-      const body = `[[${pdfName}]]\n`;
-      await this.app.vault.create(companionPath, frontmatter + body);
+      file = await this.app.vault.create(companionPath, `[[${pdfName}]]\n`);
     }
+
+    await this.app.fileManager.processFrontMatter(file as TFile, (fm) => {
+      fm["tags"] = tags;
+    });
   }
 
   async addTag(pdfPath: string, tag: string): Promise<void> {

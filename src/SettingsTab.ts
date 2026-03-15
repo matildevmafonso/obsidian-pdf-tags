@@ -12,7 +12,6 @@ export class PdfTagsSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "PDF Tags Settings" });
 
     new Setting(containerEl)
       .setName("Companion folder")

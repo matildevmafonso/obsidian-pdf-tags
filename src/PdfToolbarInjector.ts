@@ -29,7 +29,8 @@ export class PdfToolbarInjector {
     if (viewerComponent.child) {
       doInject(viewerComponent.child);
     } else if (typeof viewerComponent.then === "function") {
-      viewerComponent.then((child: unknown) => doInject(child));
+      const child = await viewerComponent;
+      doInject(child);
     }
   }
 

@@ -29,6 +29,10 @@
   gap: 8px;
 }
 
+.pdf-tags-popover--hidden {
+  visibility: hidden;
+}
+
 /* ── Current tag chips ───────────────────────────────────────────────────── */
 
 .pdf-tags-popover-chips {
@@ -125,11 +129,16 @@
 /* ── Autocomplete dropdown ───────────────────────────────────────────────── */
 
 .pdf-tags-dropdown {
+  display: none;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-s);
   box-shadow: var(--shadow-s);
   overflow: hidden;
+}
+
+.pdf-tags-dropdown--visible {
+  display: block;
 }
 
 .pdf-tags-dropdown-item {
