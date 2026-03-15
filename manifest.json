@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-pdf-tags",
+  "name": "PDF Tags",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "Add and manage tags for PDF files in your vault.",
+  "author": "matildevmafonso",
+  "authorUrl": "https://github.com/matildevmafonso",
+  "isDesktopOnly": false
+}

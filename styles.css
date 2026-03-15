@@ -1,0 +1,181 @@
+/* PDF Tags Plugin Styles */
+
+/* ── Toolbar button ──────────────────────────────────────────────────────── */
+
+.pdf-tags-toolbar-btn {
+  color: var(--icon-color);
+  opacity: var(--icon-opacity);
+}
+
+.pdf-tags-toolbar-btn:hover {
+  color: var(--icon-color-hover);
+  opacity: var(--icon-opacity-hover);
+}
+
+/* ── Popover container ───────────────────────────────────────────────────── */
+
+.pdf-tags-popover {
+  position: fixed;
+  z-index: 1000;
+  min-width: 260px;
+  max-width: 340px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-l);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Current tag chips ───────────────────────────────────────────────────── */
+
+.pdf-tags-popover-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.pdf-tags-no-tags {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.pdf-tags-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--tag-background);
+  color: var(--tag-color);
+  border: 1px solid var(--tag-border-color);
+  border-radius: var(--tag-radius);
+  padding: 2px 8px 2px 8px;
+  font-size: 0.8rem;
+  cursor: default;
+}
+
+.pdf-tags-chip-label {
+  line-height: 1.4;
+}
+
+.pdf-tags-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-muted);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: background 0.1s, color 0.1s;
+}
+
+.pdf-tags-chip-remove:hover {
+  background: var(--background-modifier-error);
+  color: var(--text-on-accent);
+}
+
+/* ── Input row ───────────────────────────────────────────────────────────── */
+
+.pdf-tags-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.pdf-tags-input {
+  flex: 1;
+  padding: 4px 8px;
+  border-radius: var(--input-radius);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 0.85rem;
+}
+
+.pdf-tags-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.pdf-tags-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: var(--button-radius);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.pdf-tags-add-btn:hover {
+  background: var(--interactive-accent-hover);
+}
+
+/* ── Autocomplete dropdown ───────────────────────────────────────────────── */
+
+.pdf-tags-dropdown {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow-s);
+  overflow: hidden;
+}
+
+.pdf-tags-dropdown-item {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-normal);
+}
+
+.pdf-tags-dropdown-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* ── Vault tag suggestions ───────────────────────────────────────────────── */
+
+.pdf-tags-suggestions {
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 8px;
+}
+
+.pdf-tags-suggestions-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.pdf-tags-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pdf-tags-suggestion-chip {
+  display: inline-block;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--tag-radius);
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.pdf-tags-suggestion-chip:hover {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
