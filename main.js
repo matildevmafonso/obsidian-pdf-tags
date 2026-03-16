@@ -251,17 +251,14 @@ var PdfToolbarInjector = class {
     this.plugin = plugin;
   }
   async injectLeaf(leaf) {
-    var _a, _b;
+    var _a;
     const view = leaf.view;
     if (((_a = view == null ? void 0 : view.getViewType) == null ? void 0 : _a.call(view)) !== "pdf")
-      return;
-    const file = (_b = view.file) != null ? _b : null;
-    if (!file)
       return;
     const viewerComponent = view.viewer;
     if (!viewerComponent)
       return;
-    const doInject = (child) => this.injectChild(child, file);
+    const doInject = (child) => this.injectChild(child, leaf);
     if (viewerComponent.child) {
       doInject(viewerComponent.child);
     } else if (typeof viewerComponent.then === "function") {
@@ -271,23 +268,23 @@ var PdfToolbarInjector = class {
       doInject(child);
     }
   }
-  injectChild(child, file) {
+  injectChild(child, leaf) {
     var _a;
     const toolbarRightEl = (_a = child == null ? void 0 : child.toolbar) == null ? void 0 : _a.toolbarRightEl;
     if (!toolbarRightEl)
       return;
-    this.injectButton(toolbarRightEl, file);
+    this.injectButton(toolbarRightEl, leaf);
     if (!this.observers.has(toolbarRightEl)) {
       const obs = new MutationObserver(() => {
         if (!toolbarRightEl.querySelector(`[${INJECTED_ATTR}]`)) {
-          this.injectButton(toolbarRightEl, file);
+          this.injectButton(toolbarRightEl, leaf);
         }
       });
       obs.observe(toolbarRightEl, { childList: true });
       this.observers.set(toolbarRightEl, obs);
     }
   }
-  injectButton(toolbarRightEl, file) {
+  injectButton(toolbarRightEl, leaf) {
     if (toolbarRightEl.querySelector(`[${INJECTED_ATTR}]`))
       return;
     const btn = toolbarRightEl.createEl("button", {
@@ -300,7 +297,12 @@ var PdfToolbarInjector = class {
     (0, import_obsidian3.setIcon)(btn, "tag");
     let activePopover = null;
     btn.addEventListener("click", (evt) => {
+      var _a;
       evt.stopPropagation();
+      const view = leaf.view;
+      const file = (_a = view.file) != null ? _a : null;
+      if (!file)
+        return;
       if (activePopover) {
         activePopover.close();
         activePopover = null;

@@ -34,13 +34,10 @@ export class PdfToolbarInjector {
     const view = leaf.view as unknown as PdfView;
     if (view?.getViewType?.() !== "pdf") return;
 
-    const file: TFile | null = view.file ?? null;
-    if (!file) return;
-
     const viewerComponent = view.viewer;
     if (!viewerComponent) return;
 
-    const doInject = (child: PdfViewerChild) => this.injectChild(child, file);
+    const doInject = (child: PdfViewerChild) => this.injectChild(child, leaf);
 
     if (viewerComponent.child) {
       doInject(viewerComponent.child);
@@ -52,18 +49,18 @@ export class PdfToolbarInjector {
     }
   }
 
-  private injectChild(child: PdfViewerChild, file: TFile): void {
+  private injectChild(child: PdfViewerChild, leaf: WorkspaceLeaf): void {
     const toolbarRightEl: HTMLElement | undefined = child?.toolbar?.toolbarRightEl;
     if (!toolbarRightEl) return;
 
     // Inject now (if not already present)
-    this.injectButton(toolbarRightEl, file);
+    this.injectButton(toolbarRightEl, leaf);
 
     // Watch for PDF++ (or anything else) removing our button and re-inject
     if (!this.observers.has(toolbarRightEl)) {
       const obs = new MutationObserver(() => {
         if (!toolbarRightEl.querySelector(`[${INJECTED_ATTR}]`)) {
-          this.injectButton(toolbarRightEl, file);
+          this.injectButton(toolbarRightEl, leaf);
         }
       });
       obs.observe(toolbarRightEl, { childList: true });
@@ -71,7 +68,7 @@ export class PdfToolbarInjector {
     }
   }
 
-  private injectButton(toolbarRightEl: HTMLElement, file: TFile): void {
+  private injectButton(toolbarRightEl: HTMLElement, leaf: WorkspaceLeaf): void {
     if (toolbarRightEl.querySelector(`[${INJECTED_ATTR}]`)) return;
 
     const btn = toolbarRightEl.createEl("button", {
@@ -86,6 +83,11 @@ export class PdfToolbarInjector {
     let activePopover: TagPopover | null = null;
     btn.addEventListener("click", (evt) => {
       evt.stopPropagation();
+      // Read the current file from the leaf at click time, not at inject time
+      const view = leaf.view as unknown as PdfView;
+      const file = view.file ?? null;
+      if (!file) return;
+
       if (activePopover) {
         activePopover.close();
         activePopover = null;
