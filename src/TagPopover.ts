@@ -30,7 +30,7 @@ export class TagPopover {
       this.close();
       return;
     }
-    this.render();
+    void this.render();
   }
 
   close(): void {
@@ -79,12 +79,11 @@ export class TagPopover {
           cls: "pdf-tags-dropdown-item",
           text: `#${tag}`,
         });
-        item.addEventListener("mousedown", async (e) => {
+        item.addEventListener("mousedown", (e) => {
           e.preventDefault();
           input.value = "";
           dropdown.classList.remove("pdf-tags-dropdown--visible");
-          await this.plugin.addTag(file.path, tag);
-          await this.rerender(pop, file);
+          void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
         });
       });
       dropdown.classList.add("pdf-tags-dropdown--visible");
@@ -95,14 +94,13 @@ export class TagPopover {
       setTimeout(() => { dropdown.classList.remove("pdf-tags-dropdown--visible"); }, 150);
     });
 
-    const doAdd = async () => {
+    const doAdd = () => {
       const raw = input.value.trim().replace(/^#+/, "");
       if (!raw) return;
       const tag = raw.toLowerCase().replace(/\s+/g, "-");
       input.value = "";
       dropdown.classList.remove("pdf-tags-dropdown--visible");
-      await this.plugin.addTag(file.path, tag);
-      await this.rerender(pop, file);
+      void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
     };
 
     addBtn.addEventListener("click", doAdd);
@@ -121,9 +119,8 @@ export class TagPopover {
           cls: "pdf-tags-suggestion-chip",
           text: `#${tag}`,
         });
-        chip.addEventListener("click", async () => {
-          await this.plugin.addTag(file.path, tag);
-          await this.rerender(pop, file);
+        chip.addEventListener("click", () => {
+          void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
         });
       });
     }
@@ -168,14 +165,14 @@ export class TagPopover {
 
   private async rerender(pop: HTMLElement, file: TFile): Promise<void> {
     const tags = await this.plugin.getTagsForFile(file.path);
-    const chipArea = pop.querySelector(".pdf-tags-popover-chips") as HTMLElement;
-    if (chipArea) {
+    const chipArea = pop.querySelector(".pdf-tags-popover-chips");
+    if (chipArea instanceof HTMLElement) {
       chipArea.empty();
       this.renderChips(chipArea, tags, file.path);
     }
     // Refresh suggestion chips
-    const suggestList = pop.querySelector(".pdf-tags-suggestion-list") as HTMLElement;
-    if (suggestList) {
+    const suggestList = pop.querySelector(".pdf-tags-suggestion-list");
+    if (suggestList instanceof HTMLElement) {
       const vaultTags = this.plugin.getAllVaultTags().filter((t) => !tags.includes(t));
       suggestList.empty();
       vaultTags.slice(0, 20).forEach((tag) => {
@@ -183,9 +180,8 @@ export class TagPopover {
           cls: "pdf-tags-suggestion-chip",
           text: `#${tag}`,
         });
-        chip.addEventListener("click", async () => {
-          await this.plugin.addTag(file.path, tag);
-          await this.rerender(pop, file);
+        chip.addEventListener("click", () => {
+          void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
         });
       });
     }
@@ -204,9 +200,11 @@ export class TagPopover {
         attr: { "aria-label": `Remove tag ${tag}` },
       });
       setIcon(removeBtn, "x");
-      removeBtn.addEventListener("click", async () => {
-        await this.plugin.removeTag(filePath, tag);
-        await this.rerender(container.closest(".pdf-tags-popover") as HTMLElement, this.file);
+      removeBtn.addEventListener("click", () => {
+        const pop = container.closest(".pdf-tags-popover");
+        void this.plugin.removeTag(filePath, tag).then(() => {
+          if (pop instanceof HTMLElement) void this.rerender(pop, this.file);
+        });
       });
     });
   }

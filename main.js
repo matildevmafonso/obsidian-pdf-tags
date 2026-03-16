@@ -78,7 +78,7 @@ var TagPopover = class {
       this.close();
       return;
     }
-    this.render();
+    void this.render();
   }
   close() {
     var _a, _b;
@@ -122,12 +122,11 @@ var TagPopover = class {
           cls: "pdf-tags-dropdown-item",
           text: `#${tag}`
         });
-        item.addEventListener("mousedown", async (e) => {
+        item.addEventListener("mousedown", (e) => {
           e.preventDefault();
           input.value = "";
           dropdown.classList.remove("pdf-tags-dropdown--visible");
-          await this.plugin.addTag(file.path, tag);
-          await this.rerender(pop, file);
+          void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
         });
       });
       dropdown.classList.add("pdf-tags-dropdown--visible");
@@ -138,15 +137,14 @@ var TagPopover = class {
         dropdown.classList.remove("pdf-tags-dropdown--visible");
       }, 150);
     });
-    const doAdd = async () => {
+    const doAdd = () => {
       const raw = input.value.trim().replace(/^#+/, "");
       if (!raw)
         return;
       const tag = raw.toLowerCase().replace(/\s+/g, "-");
       input.value = "";
       dropdown.classList.remove("pdf-tags-dropdown--visible");
-      await this.plugin.addTag(file.path, tag);
-      await this.rerender(pop, file);
+      void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
     };
     addBtn.addEventListener("click", doAdd);
     input.addEventListener("keydown", (e) => {
@@ -164,9 +162,8 @@ var TagPopover = class {
           cls: "pdf-tags-suggestion-chip",
           text: `#${tag}`
         });
-        chip.addEventListener("click", async () => {
-          await this.plugin.addTag(file.path, tag);
-          await this.rerender(pop, file);
+        chip.addEventListener("click", () => {
+          void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
         });
       });
     }
@@ -202,12 +199,12 @@ var TagPopover = class {
   async rerender(pop, file) {
     const tags = await this.plugin.getTagsForFile(file.path);
     const chipArea = pop.querySelector(".pdf-tags-popover-chips");
-    if (chipArea) {
+    if (chipArea instanceof HTMLElement) {
       chipArea.empty();
       this.renderChips(chipArea, tags, file.path);
     }
     const suggestList = pop.querySelector(".pdf-tags-suggestion-list");
-    if (suggestList) {
+    if (suggestList instanceof HTMLElement) {
       const vaultTags = this.plugin.getAllVaultTags().filter((t) => !tags.includes(t));
       suggestList.empty();
       vaultTags.slice(0, 20).forEach((tag) => {
@@ -215,9 +212,8 @@ var TagPopover = class {
           cls: "pdf-tags-suggestion-chip",
           text: `#${tag}`
         });
-        chip.addEventListener("click", async () => {
-          await this.plugin.addTag(file.path, tag);
-          await this.rerender(pop, file);
+        chip.addEventListener("click", () => {
+          void this.plugin.addTag(file.path, tag).then(() => this.rerender(pop, file));
         });
       });
     }
@@ -235,9 +231,12 @@ var TagPopover = class {
         attr: { "aria-label": `Remove tag ${tag}` }
       });
       (0, import_obsidian2.setIcon)(removeBtn, "x");
-      removeBtn.addEventListener("click", async () => {
-        await this.plugin.removeTag(filePath, tag);
-        await this.rerender(container.closest(".pdf-tags-popover"), this.file);
+      removeBtn.addEventListener("click", () => {
+        const pop = container.closest(".pdf-tags-popover");
+        void this.plugin.removeTag(filePath, tag).then(() => {
+          if (pop instanceof HTMLElement)
+            void this.rerender(pop, this.file);
+        });
       });
     });
   }
@@ -266,7 +265,9 @@ var PdfToolbarInjector = class {
     if (viewerComponent.child) {
       doInject(viewerComponent.child);
     } else if (typeof viewerComponent.then === "function") {
-      const child = await viewerComponent;
+      const child = await new Promise((resolve) => {
+        viewerComponent.then(resolve);
+      });
       doInject(child);
     }
   }
@@ -328,25 +329,23 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
   constructor() {
     super(...arguments);
     this.settings = DEFAULT_SETTINGS;
-    this.styleEl = null;
   }
   async onload() {
     await this.loadSettings();
     this.removeFromUserIgnoreFilters(this.settings.companionFolder);
-    this.injectFolderHideStyle();
     this.injector = new PdfToolbarInjector(this);
     this.app.workspace.onLayoutReady(() => {
-      this.injector.injectAll();
+      void this.injector.injectAll();
     });
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         if (leaf)
-          this.injector.injectLeaf(leaf);
+          void this.injector.injectLeaf(leaf);
       })
     );
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
-        this.injector.injectAll();
+        void this.injector.injectAll();
       })
     );
     this.registerEvent(
@@ -364,24 +363,21 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
         if (file instanceof import_obsidian4.TFile && file.extension === "pdf") {
-          this.handlePdfRename(file, oldPath);
+          void this.handlePdfRename(file, oldPath);
         }
       })
     );
     this.registerEvent(
       this.app.vault.on("delete", (file) => {
         if (file instanceof import_obsidian4.TFile && file.extension === "pdf") {
-          this.handlePdfDelete(file);
+          void this.handlePdfDelete(file);
         }
       })
     );
     this.addSettingTab(new PdfTagsSettingTab(this.app, this));
   }
   onunload() {
-    var _a;
     this.injector.destroy();
-    (_a = this.styleEl) == null ? void 0 : _a.remove();
-    this.styleEl = null;
   }
   // ─── Settings ────────────────────────────────────────────────────────────────
   async loadSettings() {
@@ -389,7 +385,6 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
   }
   async saveSettings() {
     await this.saveData(this.settings);
-    this.injectFolderHideStyle();
   }
   // ─── Folder visibility (CSS only) ────────────────────────────────────────────
   removeFromUserIgnoreFilters(folder) {
@@ -401,14 +396,6 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
     if (updated.length !== filters.length) {
       vault.setConfig("userIgnoreFilters", updated.length ? updated : null);
     }
-  }
-  injectFolderHideStyle() {
-    const folder = (0, import_obsidian4.normalizePath)(this.settings.companionFolder);
-    const css = `.nav-folder-title[data-path="${folder}"],.nav-folder-title[data-path="${folder}"] ~ .nav-folder-children { display: none !important; }`;
-    if (!this.styleEl) {
-      this.styleEl = document.head.createEl("style", { attr: { id: "pdf-tags-hide-folder" } });
-    }
-    this.styleEl.textContent = css;
   }
   // ─── Companion file helpers ──────────────────────────────────────────────────
   companionPathFor(pdfPath) {
@@ -440,8 +427,11 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
     var _a;
     await this.ensureFolder();
     const companionPath = this.companionPathFor(pdfPath);
-    let file = this.app.vault.getAbstractFileByPath(companionPath);
-    if (!(file instanceof import_obsidian4.TFile)) {
+    const existing = this.app.vault.getAbstractFileByPath(companionPath);
+    let file;
+    if (existing instanceof import_obsidian4.TFile) {
+      file = existing;
+    } else {
       const pdfName = (_a = pdfPath.split("/").pop()) != null ? _a : pdfPath;
       file = await this.app.vault.create(companionPath, `[[${pdfName}]]
 `);
@@ -479,7 +469,7 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
     const companionPath = this.companionPathFor(file.path);
     const companion = this.app.vault.getAbstractFileByPath(companionPath);
     if (companion instanceof import_obsidian4.TFile) {
-      await this.app.vault.trash(companion, true);
+      await this.app.fileManager.trashFile(companion);
     }
   }
 };

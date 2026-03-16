@@ -1,5 +1,18 @@
 /* PDF Tags Plugin Styles */
 
+/* ── Hide companion folder from file explorer ────────────────────────────── */
+/*
+ * Hides the companion folder (_pdf-tags by default) from the file explorer.
+ * Targets the nav folder title row and its children container.
+ * If you change the companion folder name in settings, reload Obsidian
+ * and update this selector accordingly (advanced use only).
+ */
+
+.nav-folder-title[data-path="_pdf-tags"],
+.nav-folder-title[data-path="_pdf-tags"] ~ .nav-folder-children {
+  display: none !important;
+}
+
 /* ── Toolbar button ──────────────────────────────────────────────────────── */
 
 .pdf-tags-toolbar-btn {

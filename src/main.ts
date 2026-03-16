@@ -10,30 +10,28 @@ import { PdfToolbarInjector } from "./PdfToolbarInjector";
 export default class PdfTagsPlugin extends Plugin {
   settings: PdfTagsSettings = DEFAULT_SETTINGS;
   private injector!: PdfToolbarInjector;
-  private styleEl: HTMLStyleElement | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
     this.removeFromUserIgnoreFilters(this.settings.companionFolder);
-    this.injectFolderHideStyle();
     this.injector = new PdfToolbarInjector(this);
 
     // Inject into PDFs that are already open on load
     this.app.workspace.onLayoutReady(() => {
-      this.injector.injectAll();
+      void this.injector.injectAll();
     });
 
     // Inject whenever a new leaf becomes active
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
-        if (leaf) this.injector.injectLeaf(leaf);
+        if (leaf) void this.injector.injectLeaf(leaf);
       })
     );
 
     // Also catch layout changes (e.g. drag-drop, split panes)
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
-        this.injector.injectAll();
+        void this.injector.injectAll();
       })
     );
 
@@ -58,7 +56,7 @@ export default class PdfTagsPlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
         if (file instanceof TFile && file.extension === "pdf") {
-          this.handlePdfRename(file, oldPath);
+          void this.handlePdfRename(file, oldPath);
         }
       })
     );
@@ -67,7 +65,7 @@ export default class PdfTagsPlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on("delete", (file) => {
         if (file instanceof TFile && file.extension === "pdf") {
-          this.handlePdfDelete(file);
+          void this.handlePdfDelete(file);
         }
       })
     );
@@ -77,8 +75,6 @@ export default class PdfTagsPlugin extends Plugin {
 
   onunload(): void {
     this.injector.destroy();
-    this.styleEl?.remove();
-    this.styleEl = null;
   }
 
   // ─── Settings ────────────────────────────────────────────────────────────────
@@ -89,7 +85,6 @@ export default class PdfTagsPlugin extends Plugin {
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
-    this.injectFolderHideStyle();
   }
 
   // ─── Folder visibility (CSS only) ────────────────────────────────────────────
@@ -103,21 +98,6 @@ export default class PdfTagsPlugin extends Plugin {
     if (updated.length !== filters.length) {
       vault.setConfig("userIgnoreFilters", updated.length ? updated : null);
     }
-  }
-
-  private injectFolderHideStyle(): void {
-    const folder = normalizePath(this.settings.companionFolder);
-    // data-path is on the inner .nav-folder-title element, not the outer .nav-folder wrapper.
-    // Hide the title row and the children container (the sibling element).
-    const css =
-      `.nav-folder-title[data-path="${folder}"],` +
-      `.nav-folder-title[data-path="${folder}"] ~ .nav-folder-children` +
-      ` { display: none !important; }`;
-
-    if (!this.styleEl) {
-      this.styleEl = document.head.createEl("style", { attr: { id: "pdf-tags-hide-folder" } });
-    }
-    this.styleEl.textContent = css;
   }
 
   // ─── Companion file helpers ──────────────────────────────────────────────────
@@ -152,13 +132,16 @@ export default class PdfTagsPlugin extends Plugin {
     await this.ensureFolder();
     const companionPath = this.companionPathFor(pdfPath);
 
-    let file = this.app.vault.getAbstractFileByPath(companionPath);
-    if (!(file instanceof TFile)) {
+    const existing = this.app.vault.getAbstractFileByPath(companionPath);
+    let file: TFile;
+    if (existing instanceof TFile) {
+      file = existing;
+    } else {
       const pdfName = pdfPath.split("/").pop() ?? pdfPath;
       file = await this.app.vault.create(companionPath, `[[${pdfName}]]\n`);
     }
 
-    await this.app.fileManager.processFrontMatter(file as TFile, (fm) => {
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
       fm["tags"] = tags;
     });
   }
@@ -196,7 +179,7 @@ export default class PdfTagsPlugin extends Plugin {
     const companionPath = this.companionPathFor(file.path);
     const companion = this.app.vault.getAbstractFileByPath(companionPath);
     if (companion instanceof TFile) {
-      await this.app.vault.trash(companion, true);
+      await this.app.fileManager.trashFile(companion);
     }
   }
 }

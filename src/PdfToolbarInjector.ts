@@ -4,6 +4,23 @@ import { TagPopover } from "./TagPopover";
 
 const INJECTED_ATTR = "data-pdf-tags-injected";
 
+interface PdfViewerChild {
+  toolbar?: {
+    toolbarRightEl?: HTMLElement;
+  };
+}
+
+interface PdfViewerComponent {
+  child?: PdfViewerChild;
+  then?: (cb: (child: PdfViewerChild) => void) => void;
+}
+
+interface PdfView {
+  getViewType(): string;
+  file?: TFile | null;
+  viewer?: PdfViewerComponent;
+}
+
 export class PdfToolbarInjector {
   private plugin: PdfTagsPlugin;
   /** Map from toolbarRightEl → its MutationObserver, so we can disconnect on unload */
@@ -14,8 +31,7 @@ export class PdfToolbarInjector {
   }
 
   async injectLeaf(leaf: WorkspaceLeaf): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const view = leaf.view as any;
+    const view = leaf.view as unknown as PdfView;
     if (view?.getViewType?.() !== "pdf") return;
 
     const file: TFile | null = view.file ?? null;
@@ -24,17 +40,19 @@ export class PdfToolbarInjector {
     const viewerComponent = view.viewer;
     if (!viewerComponent) return;
 
-    const doInject = (child: any) => this.injectChild(child, file);
+    const doInject = (child: PdfViewerChild) => this.injectChild(child, file);
 
     if (viewerComponent.child) {
       doInject(viewerComponent.child);
     } else if (typeof viewerComponent.then === "function") {
-      const child = await viewerComponent;
+      const child = await new Promise<PdfViewerChild>((resolve) => {
+        viewerComponent.then!(resolve);
+      });
       doInject(child);
     }
   }
 
-  private injectChild(child: any, file: TFile): void {
+  private injectChild(child: PdfViewerChild, file: TFile): void {
     const toolbarRightEl: HTMLElement | undefined = child?.toolbar?.toolbarRightEl;
     if (!toolbarRightEl) return;
 
