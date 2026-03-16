@@ -383,7 +383,8 @@ var PdfTagsPlugin = class extends import_obsidian4.Plugin {
   }
   // ─── Settings ────────────────────────────────────────────────────────────────
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data != null ? data : {});
   }
   async saveSettings() {
     await this.saveData(this.settings);

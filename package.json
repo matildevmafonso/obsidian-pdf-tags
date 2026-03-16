@@ -6,17 +6,25 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css \"/home/matildevmafonso/FCUL2526/2semester/.obsidian/plugins/obsidian-pdf-tags/\""
+    "deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css \"/home/matildevmafonso/FCUL2526/2semester/.obsidian/plugins/obsidian-pdf-tags/\"",
+    "lint": "eslint src/"
   },
-  "keywords": ["obsidian", "pdf", "tags"],
+  "keywords": [
+    "obsidian",
+    "pdf",
+    "tags"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^16.11.6",
+    "@typescript-eslint/parser": "^8.57.0",
     "builtin-modules": "^3.3.0",
     "esbuild": "0.17.3",
+    "eslint-plugin-obsidianmd": "^0.1.9",
+    "globals": "^17.4.0",
     "obsidian": "latest",
     "tslib": "2.4.0",
-    "typescript": "4.7.4"
+    "typescript": "^5.9.3"
   }
 }

@@ -80,7 +80,8 @@ export default class PdfTagsPlugin extends Plugin {
   // ─── Settings ────────────────────────────────────────────────────────────────
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = await this.loadData() as Partial<PdfTagsSettings> | null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
   }
 
   async saveSettings(): Promise<void> {
@@ -120,7 +121,7 @@ export default class PdfTagsPlugin extends Plugin {
     if (!(file instanceof TFile)) return [];
 
     let result: string[] = [];
-    await this.app.fileManager.processFrontMatter(file, (fm) => {
+    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
       const raw = fm["tags"];
       if (Array.isArray(raw)) result = raw.map(String);
       else if (typeof raw === "string") result = [raw];
@@ -141,7 +142,7 @@ export default class PdfTagsPlugin extends Plugin {
       file = await this.app.vault.create(companionPath, `[[${pdfName}]]\n`);
     }
 
-    await this.app.fileManager.processFrontMatter(file, (fm) => {
+    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
       fm["tags"] = tags;
     });
   }
