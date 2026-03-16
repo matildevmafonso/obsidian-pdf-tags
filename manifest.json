@@ -1,9 +1,9 @@
 {
-  "id": "obsidian-pdf-tags",
+  "id": "pdf-tags",
   "name": "PDF Tags",
   "version": "1.0.0",
   "minAppVersion": "1.1.0",
-  "description": "Tag your PDFs and find them in graph view, search, and the tag pane.",
+  "description": "Tag your PDFs and find them in graph view, search and the tag pane.",
   "author": "matildevmafonso",
   "authorUrl": "https://github.com/matildevmafonso",
   "isDesktopOnly": false
