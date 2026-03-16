@@ -17,6 +17,7 @@ export default defineConfig([
     },
     rules: {
       "obsidianmd/sample-names": "off",
+      "obsidianmd/prefer-file-manager-trash-file": "error",
     },
   },
 ]);
